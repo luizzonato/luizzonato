@@ -5,7 +5,7 @@
 <img src="https://raw.githubusercontent.com/luizzonato/luizzonato/main/assets/typing.svg?v=3" alt="Vendas, dados e automação com IA">
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-luiz--zonato-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/luiz-zonato-ab1763106)
-[![Catálogo](https://img.shields.io/badge/Projeto-catalogo.pamc.com.br-111?style=for-the-badge&logo=cloudflarepages&logoColor=white)](https://catalogo.pamc.com.br)
+[![Catálogo Demo](https://img.shields.io/badge/Projeto-Catálogo%20Online%20(demo)-111?style=for-the-badge&logo=githubpages&logoColor=white)](https://luizzonato.github.io/catalogo-demo/)
 [![Painel Demo](https://img.shields.io/badge/Projeto-Painel%20de%20Metas%20(demo)-111?style=for-the-badge&logo=githubpages&logoColor=white)](https://luizzonato.github.io/painel-demo/)
 
 </div>
@@ -26,7 +26,7 @@ Liderei a operação comercial de uma distribuidora de **Nestlé, Garoto e Purin
 | **Fechamento de pedidos** | Painel que mostra o que fecha, o que falta e onde agir antes do corte |
 | **Modelo de remuneração e comissão** | Cobertura por categoria, faixas e KPIs em SQL + Excel, no lugar do cálculo manual |
 | **Portal e app de críticas** | Vendedores abrem chamados e a equipe interna acompanha até a resolução (desenvolvido com minha equipe AV/TI) |
-| **Catálogo web público** | [catalogo.pamc.com.br](https://catalogo.pamc.com.br): produtos da distribuidora sempre acessíveis ao cliente |
+| **Catálogo web de produtos** | Catálogo público por universo de marcas, com busca por nome/SKU/EAN, filtros de disponibilidade e ficha do SKU. [Ver demo com dados fictícios](https://luizzonato.github.io/catalogo-demo/) |
 | **Painel de metas e sortimento** | Meta x realizado, projeção de fechamento e matriz de sortimento por cliente. [Ver demo com dados fictícios](https://luizzonato.github.io/painel-demo/) |
 | **Dados do ERP** | Consultas em SQL Server sobre o ERP (FLEXX/AvanteSales) alimentando relatórios e Power BI |
 
