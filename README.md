@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/luizzonato/luizzonato/main/assets/banner.svg" alt="Luiz Zonato — Gestor comercial que constrói as próprias ferramentas" width="100%">
+<img src="https://raw.githubusercontent.com/luizzonato/luizzonato/main/assets/banner.svg?v=3" alt="Luiz Zonato — Gestor comercial que constrói as próprias ferramentas" width="100%">
 
-<img src="https://raw.githubusercontent.com/luizzonato/luizzonato/main/assets/typing.svg" alt="Vendas, dados e automação com IA">
+<img src="https://raw.githubusercontent.com/luizzonato/luizzonato/main/assets/typing.svg?v=3" alt="Vendas, dados e automação com IA">
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-luiz--zonato-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/luiz-zonato-ab1763106)
 [![Catálogo](https://img.shields.io/badge/Projeto-catalogo.pamc.com.br-111?style=for-the-badge&logo=cloudflarepages&logoColor=white)](https://catalogo.pamc.com.br)
@@ -32,7 +32,7 @@ Liderei a operação comercial de uma distribuidora de **Nestlé, Garoto e Purin
 
 <div align="center">
 
-<a href="https://luizzonato.github.io/painel-demo/"><img src="https://raw.githubusercontent.com/luizzonato/luizzonato/main/assets/preview.svg" alt="Prévia animada do painel de metas e sortimento (dados fictícios)" width="100%"></a>
+<a href="https://luizzonato.github.io/painel-demo/"><img src="https://raw.githubusercontent.com/luizzonato/luizzonato/main/assets/preview.svg?v=3" alt="Prévia animada do painel de metas e sortimento (dados fictícios)" width="100%"></a>
 
 <sub>Prévia animada do painel de metas, com dados fictícios. Clique para abrir a demo completa.</sub>
 
