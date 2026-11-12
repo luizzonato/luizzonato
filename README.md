@@ -46,4 +46,31 @@ Liderei a operação comercial de uma distribuidora de **Nestlé, Garoto e Purin
 
 ## Stack
 
-![SQL Server](https://img.shields.io/badge/SQL%20Server-CC2927?style=flat-square&logo=microsoftsqlserver&logoColor=white)
+<img src="https://img.shields.io/badge/SQL%20Server-CC2927?style=for-the-badge" alt="SQL Server">
+<img src="https://img.shields.io/badge/Power%20BI-F2C811?style=for-the-badge" alt="Power BI">
+<img src="https://img.shields.io/badge/Excel-217346?style=for-the-badge" alt="Excel">
+<img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge" alt="Python">
+<img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge" alt="JavaScript">
+<img src="https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge" alt="HTML5">
+<img src="https://img.shields.io/badge/Cloudflare%20Pages-F38020?style=for-the-badge" alt="Cloudflare Pages">
+<img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge" alt="GitHub">
+<img src="https://img.shields.io/badge/Claude%20Code-D97757?style=for-the-badge" alt="Claude Code">
+
+---
+
+## Em andamento
+
+- 🎯 **Distribuição e análise de metas** por equipe e vendedor
+- 📱 **Copiloto do Vendedor**: app de celular com sugestões inteligentes para a venda do dia
+- 📊 **Plano de incentivo e acompanhamento** em painel HTML atualizado automaticamente
+- 🧭 **Portal de integração** para novos vendedores e reciclagem
+
+---
+
+<div align="center">
+
+**Vamos conversar sobre vendas, dados e automação aplicada ao varejo e à distribuição.**
+
+[Chamar no LinkedIn](https://linkedin.com/in/luiz-zonato-ab1763106)
+
+</div>
