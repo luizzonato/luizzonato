@@ -2,7 +2,7 @@
 
 <img src="https://raw.githubusercontent.com/luizzonato/luizzonato/main/assets/banner.svg?v=3" alt="Luiz Zonato — Gestor comercial que constrói as próprias ferramentas" width="100%">
 
-<img src="https://raw.githubusercontent.com/luizzonato/luizzonato/main/assets/typing.svg?v=3" alt="Vendas, dados e automação com IA">
+<img src="https://raw.githubusercontent.com/luizzonato/luizzonato/main/assets/typing.svg?v=4" alt="Vendas, dados e automação com IA">
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-luiz--zonato-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/luiz-zonato-ab1763106)
 [![Catálogo Demo](https://img.shields.io/badge/Projeto-Catálogo%20Online%20(demo)-111?style=for-the-badge&logo=githubpages&logoColor=white)](https://luizzonato.github.io/catalogo-demo/)
