@@ -1,9 +1,8 @@
 <div align="center">
 
-# Luiz Zonato
+<img src="https://raw.githubusercontent.com/luizzonato/luizzonato/main/assets/banner.svg" alt="Luiz Zonato — Gestor comercial que constrói as próprias ferramentas" width="100%">
 
-### Gestor comercial que constrói as próprias ferramentas
-**Vendas · Dados · Automação com IA** — Distrito Federal e Goiás
+<img src="https://raw.githubusercontent.com/luizzonato/luizzonato/main/assets/typing.svg" alt="Vendas, dados e automação com IA">
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-luiz--zonato-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/luiz-zonato-ab1763106)
 [![Catálogo](https://img.shields.io/badge/Projeto-catalogo.pamc.com.br-111?style=for-the-badge&logo=cloudflarepages&logoColor=white)](https://catalogo.pamc.com.br)
@@ -30,6 +29,14 @@ Liderei a operação comercial de uma distribuidora de **Nestlé, Garoto e Purin
 | **Catálogo web público** | [catalogo.pamc.com.br](https://catalogo.pamc.com.br): produtos da distribuidora sempre acessíveis ao cliente |
 | **Painel de metas e sortimento** | Meta x realizado, projeção de fechamento e matriz de sortimento por cliente. [Ver demo com dados fictícios](https://luizzonato.github.io/painel-demo/) |
 | **Dados do ERP** | Consultas em SQL Server sobre o ERP (FLEXX/AvanteSales) alimentando relatórios e Power BI |
+
+<div align="center">
+
+<a href="https://luizzonato.github.io/painel-demo/"><img src="https://raw.githubusercontent.com/luizzonato/luizzonato/main/assets/preview.svg" alt="Prévia animada do painel de metas e sortimento (dados fictícios)" width="100%"></a>
+
+<sub>Prévia animada do painel de metas, com dados fictícios. Clique para abrir a demo completa.</sub>
+
+</div>
 
 > Os códigos de uso interno são privados por pertencerem à empresa. Os estudos de caso com arquitetura e telas vão sendo publicados aqui.
 
