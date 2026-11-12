@@ -22,13 +22,13 @@ Liderei a operação comercial de uma distribuidora de **Nestlé, Garoto e Purin
 
 | Frente | O que resolve |
 |---|---|
-| **Painéis comerciais em tempo real** | Faturamento, positivação e cobertura por equipe e vendedor, consultáveis pelo celular (Power BI e web apps) |
+| **Painéis comerciais em tempo real** | Faturamento, positivação e cobertura por equipe e vendedor, consultáveis pelo celular (web apps) |
 | **Fechamento de pedidos** | Painel que mostra o que fecha, o que falta e onde agir antes do corte |
 | **Modelo de remuneração e comissão** | Cobertura por categoria, faixas e KPIs em SQL + Excel, no lugar do cálculo manual |
 | **Portal e app de críticas** | Vendedores abrem chamados e a equipe interna acompanha até a resolução (desenvolvido com minha equipe AV/TI) |
 | **Catálogo web de produtos** | Catálogo público por universo de marcas, com busca por nome/SKU/EAN, filtros de disponibilidade e ficha do SKU. [Ver demo com dados fictícios](https://luizzonato.github.io/catalogo-demo/) |
 | **Painel de metas e sortimento** | Meta x realizado, projeção de fechamento e matriz de sortimento por cliente. [Ver demo com dados fictícios](https://luizzonato.github.io/painel-demo/) |
-| **Dados do ERP** | Consultas em SQL Server sobre o ERP (FLEXX/AvanteSales) alimentando relatórios e Power BI |
+| **Dados do ERP** | Consultas em SQL Server sobre o ERP (FLEXX/AvanteSales) alimentando relatórios e painéis |
 
 <div align="center">
 
@@ -53,7 +53,7 @@ Liderei a operação comercial de uma distribuidora de **Nestlé, Garoto e Purin
 
 ## Stack
 
-<img src="https://img.shields.io/badge/SQL%20Server-CC2927?style=for-the-badge" alt="SQL Server"> <img src="https://img.shields.io/badge/Power%20BI-F2C811?style=for-the-badge" alt="Power BI"> <img src="https://img.shields.io/badge/Excel-217346?style=for-the-badge" alt="Excel"> <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge" alt="Python"> <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge" alt="JavaScript"> <img src="https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge" alt="HTML5"> <img src="https://img.shields.io/badge/Cloudflare%20Pages-F38020?style=for-the-badge" alt="Cloudflare Pages"> <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge" alt="GitHub"> <img src="https://img.shields.io/badge/Claude%20Code-D97757?style=for-the-badge" alt="Claude Code">
+<img src="https://img.shields.io/badge/SQL%20Server-CC2927?style=for-the-badge" alt="SQL Server">  <img src="https://img.shields.io/badge/Excel-217346?style=for-the-badge" alt="Excel"> <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge" alt="Python"> <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge" alt="JavaScript"> <img src="https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge" alt="HTML5"> <img src="https://img.shields.io/badge/Cloudflare%20Pages-F38020?style=for-the-badge" alt="Cloudflare Pages"> <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge" alt="GitHub"> <img src="https://img.shields.io/badge/Claude%20Code-D97757?style=for-the-badge" alt="Claude Code">
 
 ---
 
