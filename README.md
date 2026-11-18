@@ -29,6 +29,10 @@ Liderei a operação comercial de uma distribuidora de **Nestlé, Garoto e Purin
 | **Catálogo web de produtos** | Catálogo público por universo de marcas, com busca por nome/SKU/EAN, filtros de disponibilidade e ficha do SKU. [Ver demo com dados fictícios](https://luizzonato.github.io/catalogo-demo/) |
 | **Painel de metas e sortimento** | Meta x realizado, projeção de fechamento e matriz de sortimento por cliente. [Ver demo com dados fictícios](https://luizzonato.github.io/painel-demo/) |
 | **Dados do ERP** | Consultas em SQL Server sobre o ERP (FLEXX/AvanteSales) alimentando relatórios e painéis |
+| **Painel central comercial** | Visão única dos indicadores da operação, em evolução, com acesso restrito por login |
+| **Ata dinâmica da reunião matinal** | Automação da ata da reunião diária com contexto e regras de negócio, desenvolvida com a equipe de TI |
+| **Portal da equipe de TI** | Quadro Kanban da equipe de tecnologia, feito em Google Apps Script |
+| **Padrão de projetos** | Modelo único de projeto (documentação, status, modelos de PR e issue) para toda a equipe seguir o mesmo fluxo |
 
 <div align="center">
 
@@ -48,6 +52,7 @@ Liderei a operação comercial de uma distribuidora de **Nestlé, Garoto e Purin
 - **IA como copiloto**: uso Claude (inclusive o Claude Code) para construir rápido, e valido regra, número e resultado antes de qualquer coisa ir para a equipe.
 - **Gestão por resultado**: alinhamento semanal, evolução apresentada na sexta, time de analistas e não de "entregadores de PDF".
 - **Dado que alguém usa**: painel bom é o que o vendedor abre no celular sem ninguém pedir.
+- **Equipe de desenvolvimento**: os devs trabalham em branches, o tech head revisa e eu valido a versão final antes de ir para o ar. Dou autonomia e crédito, e aprendo junto.
 
 ---
 
@@ -59,9 +64,10 @@ Liderei a operação comercial de uma distribuidora de **Nestlé, Garoto e Purin
 
 ## Em andamento
 
+- 🧩 **Painel central comercial** que reúne os indicadores da operação com acesso por login
+- 📝 **Automação da ata da reunião matinal** com a equipe de TI
 - 🎯 **Distribuição e análise de metas** por equipe e vendedor
-- 📱 **Copiloto do Vendedor**: app de celular com sugestões inteligentes para a venda do dia
-- 📊 **Plano de incentivo e acompanhamento** em painel HTML atualizado automaticamente
+- 📱 **Copiloto do Vendedor**: app de celular com sugestões para a venda do dia
 - 🧭 **Portal de integração** para novos vendedores e reciclagem
 
 ---
