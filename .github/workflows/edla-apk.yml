@@ -3,6 +3,11 @@ name: Couple Bank - publicar e gerar APK
 # Roda só quando alguém com acesso ao repositório clica em "Run workflow".
 on:
   workflow_dispatch:
+    inputs:
+      gerar_apk:
+        description: "Gerar também o APK (desmarque para só publicar o site, bem mais rápido)"
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -40,6 +45,7 @@ jobs:
           java-version: 17
 
       - uses: gradle/actions/setup-gradle@v4
+        if: ${{ inputs.gerar_apk }}
         with:
           gradle-version: 8.7
 
@@ -82,20 +88,36 @@ jobs:
           fi
           printf '%s' "$ALLOWED_EMAILS" | npx wrangler secret put ALLOWED_EMAILS
 
-      - name: Gerar chave de assinatura do APK
+      - name: Preparar a chave de assinatura do APK
         id: key
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD_SECRET: ${{ secrets.KEYSTORE_PASSWORD }}
+          GERAR_APK: ${{ inputs.gerar_apk }}
         run: |
-          PASS=$(openssl rand -hex 16)
-          echo "::add-mask::$PASS"
-          keytool -genkeypair -noprompt -alias edla -keyalg RSA -keysize 2048 -validity 10000 \
-            -keystore "$RUNNER_TEMP/edla.jks" -storepass "$PASS" -keypass "$PASS" \
-            -dname "CN=Edla Financas, O=Familia, C=BR"
+          if [ -n "$KEYSTORE_B64" ] && [ -n "$KEYSTORE_PASSWORD_SECRET" ]; then
+            echo "Usando a chave fixa guardada nos segredos (o APK instalado continua em tela cheia)."
+            printf '%s' "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/edla.jks"
+            PASS="$KEYSTORE_PASSWORD_SECRET"
+          else
+            if [ "$GERAR_APK" != "true" ]; then
+              echo "::error::Sem a chave fixa (segredos KEYSTORE_B64 e KEYSTORE_PASSWORD) não dá para só publicar sem quebrar a verificação do APK. Rode com 'Gerar também o APK' marcado."
+              exit 1
+            fi
+            echo "::warning::Segredos KEYSTORE_B64/KEYSTORE_PASSWORD ausentes: gerando uma chave temporária. O APK instalado perderá a tela cheia a cada publicação."
+            PASS=$(openssl rand -hex 16)
+            echo "::add-mask::$PASS"
+            keytool -genkeypair -noprompt -alias edla -keyalg RSA -keysize 2048 -validity 10000 \
+              -keystore "$RUNNER_TEMP/edla.jks" -storepass "$PASS" -keypass "$PASS" \
+              -dname "CN=Couple Bank, O=Casal, C=BR"
+          fi
           SHA=$(keytool -list -v -keystore "$RUNNER_TEMP/edla.jks" -storepass "$PASS" -alias edla | grep -oE 'SHA256: ([0-9A-F]{2}:){31}[0-9A-F]{2}' | cut -d' ' -f2)
-          if ! echo "$SHA" | grep -Eq '^([0-9A-F]{2}:){31}[0-9A-F]{2}$'; then echo "::error::Fingerprint inválido."; exit 1; fi
+          if ! echo "$SHA" | grep -Eq '^([0-9A-F]{2}:){31}[0-9A-F]{2}$'; then echo "::error::Não consegui ler a chave de assinatura (senha ou arquivo inválido)."; exit 1; fi
           echo "KEYSTORE_PASSWORD=$PASS" >> "$GITHUB_ENV"
           echo "sha=$SHA" >> "$GITHUB_OUTPUT"
 
       - name: Montar o APK
+        if: ${{ inputs.gerar_apk }}
         env:
           SITE_URL: ${{ steps.deploy1.outputs.url }}
           KEYSTORE_FILE: ${{ runner.temp }}/edla.jks
@@ -130,6 +152,7 @@ jobs:
           curl -fsS -o /dev/null -w "app: %{http_code}\n" "$URL/"
 
       - uses: actions/upload-artifact@v4
+        if: ${{ inputs.gerar_apk }}
         with:
           name: edla-financas-apk
           path: out/edla-financas.apk
@@ -139,12 +162,13 @@ jobs:
       - name: Resumo
         env:
           URL: ${{ steps.deploy1.outputs.url }}
+          GERAR_APK: ${{ inputs.gerar_apk }}
         run: |
           {
             echo "## Pronto"
             echo "- App publicado em: $URL"
-            echo "- APK: baixe em **Artifacts** no fim desta página (edla-financas-apk)."
-            echo "- A cada nova execução o APK muda de chave: desinstale o anterior antes de instalar o novo (os dados ficam salvos na nuvem)."
+            if [ "$GERAR_APK" = "true" ]; then echo "- APK: baixe em **Artifacts** no fim desta página."; fi
+            echo "- O APK usa a chave fixa: só precisa reinstalar se mudar o nome ou o ícone. Os dados ficam na nuvem."
             echo "- **iPhone:** abra $URL no Safari > Compartilhar > Adicionar à Tela de Início."
             echo "- **Firebase (uma vez):** em Authentication > Settings > Authorized domains, adicione ${URL#https://} (sem isso o login do Google é recusado)."
           } >> "$GITHUB_STEP_SUMMARY"
