@@ -1,0 +1,16 @@
+{
+  "name": "edla-financas",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Controle financeiro do casal - Cloudflare Workers + D1",
+  "scripts": {
+    "dev": "wrangler dev",
+    "migrate:local": "wrangler d1 migrations apply edla-financas --local",
+    "migrate:remote": "wrangler d1 migrations apply edla-financas --remote",
+    "deploy": "wrangler deploy",
+    "test": "node --test test/*.test.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
