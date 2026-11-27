@@ -58,7 +58,8 @@ jobs:
       - name: Criar o banco (se ainda não existir) e aplicar as tabelas
         run: |
           npx wrangler d1 create edla-financas >/dev/null 2>&1 || echo "Banco já existe, seguindo."
-          DB_ID=$(npx wrangler d1 info edla-financas --json | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const j=JSON.parse(s);console.log(j.uuid||j.id)})")
+          # 'd1 info' lê o ID de exemplo do wrangler.jsonc e falha; a lista vem direto da conta Cloudflare.
+          DB_ID=$(npx wrangler d1 list --json | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const m=s.match(/\[[\s\S]*\]/);const l=JSON.parse(m?m[0]:'[]');const d=l.find(x=>x.name==='edla-financas');console.log(d?(d.uuid||d.id):'')})")
           if ! echo "$DB_ID" | grep -Eq '^[0-9a-f-]{36}$'; then echo "::error::Não consegui obter o ID do banco."; exit 1; fi
           sed -i "s/00000000-0000-0000-0000-000000000000/$DB_ID/" wrangler.jsonc
           npx wrangler d1 migrations apply edla-financas --remote
