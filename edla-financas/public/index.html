@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Edla Finanças</title>
+  <meta name="description" content="Controle financeiro do casal: gastos, parcelas e quanto da renda já está comprometido.">
+  <meta name="theme-color" content="#7b4bd6">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <!-- Entrar / primeiro acesso -->
+  <main id="auth" class="auth" hidden>
+    <div class="auth-card">
+      <img class="auth-logo" src="/icons/icon.svg" alt="" width="72" height="72">
+      <h1>Edla Finanças</h1>
+      <p id="auth-sub" class="muted">Entre para ver suas finanças.</p>
+      <form id="auth-form" autocomplete="on" novalidate>
+        <label class="field" id="f-name" hidden>Nome
+          <input name="name" maxlength="40" autocomplete="name">
+        </label>
+        <label class="field">Usuário
+          <input name="username" maxlength="30" autocomplete="username" autocapitalize="none" required>
+        </label>
+        <label class="field">Senha
+          <input name="password" type="password" maxlength="200" autocomplete="current-password" required>
+        </label>
+        <label class="field" id="f-invite" hidden>Código de convite
+          <input name="invite" type="password" maxlength="200" autocomplete="off">
+        </label>
+        <p id="auth-error" class="error" role="alert"></p>
+        <button class="btn primary" type="submit" id="auth-submit">Entrar</button>
+      </form>
+      <button class="link" id="auth-toggle" type="button"></button>
+    </div>
+  </main>
+
+  <!-- App -->
+  <div id="app" hidden>
+    <header class="top">
+      <button class="avatar-btn" id="top-avatar" type="button" aria-label="Meu perfil"></button>
+      <div class="hello">
+        <small class="muted">Olá,</small>
+        <strong id="hello-name"></strong>
+      </div>
+      <div class="month-nav" role="group" aria-label="Mês">
+        <button type="button" id="m-prev" aria-label="Mês anterior">‹</button>
+        <button type="button" id="m-label" class="m-label" aria-label="Voltar para este mês"></button>
+        <button type="button" id="m-next" aria-label="Próximo mês">›</button>
+      </div>
+    </header>
+
+    <main class="views">
+      <section id="view-resumo" class="view"></section>
+      <section id="view-lancamentos" class="view" hidden></section>
+      <section id="view-perfil" class="view" hidden></section>
+    </main>
+
+    <button id="fab" class="fab" type="button" aria-label="Novo lançamento">+</button>
+
+    <nav class="tabs" aria-label="Seções">
+      <button type="button" data-view="resumo" class="active"><span class="ico">📊</span>Resumo</button>
+      <button type="button" data-view="lancamentos"><span class="ico">📋</span>Lançamentos</button>
+      <button type="button" data-view="perfil"><span class="ico">👤</span>Perfil</button>
+    </nav>
+  </div>
+
+  <!-- Formulário de lançamento -->
+  <dialog id="entry-dialog" class="sheet">
+    <form id="entry-form" method="dialog" novalidate>
+      <div class="sheet-head">
+        <h2 id="entry-title">Novo lançamento</h2>
+        <button type="button" class="icon-btn" id="entry-close" aria-label="Fechar">✕</button>
+      </div>
+
+      <div class="seg" id="kind-seg" role="radiogroup" aria-label="Tipo"></div>
+
+      <label class="field">Descrição
+        <input name="description" maxlength="80" placeholder="Ex.: Mercado, Tênis, Salário" required>
+      </label>
+
+      <div class="row">
+        <label class="field">
+          <span id="amount-label">Valor</span>
+          <input name="amount" inputmode="decimal" placeholder="0,00" autocomplete="off" required>
+        </label>
+        <label class="field" id="f-months" hidden>
+          <span id="months-label">Parcelas</span>
+          <input name="months" inputmode="numeric" maxlength="3" autocomplete="off">
+        </label>
+      </div>
+      <p id="total-hint" class="hint" hidden></p>
+
+      <div class="row">
+        <label class="field">
+          <span id="start-label">Mês</span>
+          <input name="start_month" type="month" required>
+        </label>
+        <label class="field" id="f-method">
+          <span>Cartão / forma</span>
+          <input name="method" list="methods" maxlength="40" placeholder="Nubank, Pix…" autocomplete="off">
+        </label>
+      </div>
+      <datalist id="methods"></datalist>
+
+      <label class="field" id="f-category">Categoria
+        <select name="category"></select>
+      </label>
+      <label class="field">Observação (opcional)
+        <input name="note" maxlength="200" autocomplete="off">
+      </label>
+
+      <p id="entry-error" class="error" role="alert"></p>
+      <div class="sheet-actions">
+        <button type="button" class="btn danger" id="entry-delete" hidden>Excluir</button>
+        <button type="submit" class="btn primary" id="entry-save">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
