@@ -1,4 +1,4 @@
-# Edla Finanças
+# Couple Bank
 
 App de controle financeiro para o casal. A Edla lança gastos, parcelas, contas fixas e renda; o app soma o mês e mostra **quanto da renda já está comprometido**, quanto sobra, quanto dá para gastar por dia e responde "e se eu gastar mais X?".
 

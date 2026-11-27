@@ -1,79 +1,67 @@
-# Como publicar no Cloudflare (passo a passo)
+# Couple Bank: publicar e gerar o APK (sem instalar nada)
 
-Precisa de: uma conta gratuita no Cloudflare e Node.js 20+ no computador.
-Tudo abaixo é feito **uma vez**, dentro da pasta `edla-financas`.
+Um fluxo automático (`.github/workflows/edla-apk.yml`, na raiz do repositório) cria o banco, publica no Cloudflare e gera o APK nos servidores do GitHub. O login é **só pelo Google**, e só entram os e-mails da lista `ALLOWED_EMAILS`.
 
-## 1. Instalar e entrar na conta
+## Preparação (uma vez)
+
+1. **Cloudflare, token:** em <https://dash.cloudflare.com/profile/api-tokens> → *Create Token* → modelo **Edit Cloudflare Workers** e, em *Permissions*, adicione **Account → D1 → Edit**. Copie o token.
+2. **Cloudflare, ID da conta:** no painel, *Workers & Pages*; o *Account ID* aparece na barra lateral. No primeiro acesso o painel pede um subdomínio `workers.dev`: aceite.
+3. **GitHub:** no repositório → *Settings → Secrets and variables → Actions → New repository secret*. Crie três:
+   - `CLOUDFLARE_API_TOKEN`: o token do passo 1
+   - `CLOUDFLARE_ACCOUNT_ID`: o ID do passo 2
+   - `ALLOWED_EMAILS`: os e-mails Google autorizados, separados por vírgula (fica em segredo porque o repositório é público)
+
+## Gerar
+
+> O GitHub só mostra o botão *Run workflow* quando o arquivo do fluxo está na branch **main**. Faça o merge primeiro.
+
+*Actions → "Couple Bank - publicar e gerar APK" → Run workflow*. Leva uns 5 a 10 minutos.
+No fim, abra a execução: o endereço do app aparece no **Resumo** e o APK em **Artifacts → edla-financas-apk** (baixe o .zip e extraia).
+
+## Depois da primeira execução (obrigatório)
+
+No console do Firebase (projeto `edila-financas`) → **Authentication → Settings → Authorized domains** → adicione o endereço do app (`edla-financas.SEU-USUARIO.workers.dev`, sem `https://`). Sem isso o Google recusa o login no site publicado.
+
+## Usar
+
+- **iPhone:** abra o endereço no **Safari** → Compartilhar → *Adicionar à Tela de Início*. O login do Google deve ser feito dentro do ícone criado.
+- **Android:** instale o APK (permitir "fontes desconhecidas"), ou use o site como no iPhone.
+
+Observações:
+- Cada execução gera um APK com chave nova: **desinstale o antigo antes de instalar o novo**. Os dados ficam na nuvem.
+- Para atualizar o app, rode sempre este fluxo (um `wrangler deploy` manual remove a verificação de tela cheia do APK).
+- O APK não tem nenhum dado financeiro; só abre o endereço do app. O repositório é público, então qualquer pessoa logada no GitHub poderia baixá-lo. Sem uma conta Google autorizada, ninguém entra no app.
+
+---
+
+# Caminho manual (pelo terminal)
+
+Precisa de: conta gratuita no Cloudflare e Node.js 20+.
 
 ```bash
 npm install
-npx wrangler login          # abre o navegador para autorizar
-```
-
-## 2. Criar o banco de dados
-
-```bash
-npx wrangler d1 create edla-financas
-```
-
-O comando mostra um `database_id`. Copie e cole no arquivo `wrangler.jsonc`, no lugar de `00000000-0000-0000-0000-000000000000`.
-
-Depois crie as tabelas:
-
-```bash
+npx wrangler login
+npx wrangler d1 create edla-financas      # copie o database_id para o wrangler.jsonc
 npx wrangler d1 migrations apply edla-financas --remote
-```
-
-## 3. Definir o código de convite (segredo)
-
-Sem isso **ninguém consegue criar conta**. Escolha uma frase longa e guarde-a só para vocês dois:
-
-```bash
-npx wrangler secret put INVITE_CODE
-```
-
-## 4. Publicar
-
-```bash
+npx wrangler secret put ALLOWED_EMAILS    # e-mails Google autorizados, separados por vírgula
 npx wrangler deploy
 ```
 
-O endereço aparece no final, algo como `https://edla-financas.SEU-USUARIO.workers.dev`.
+Depois adicione o domínio do app nos *Authorized domains* do Firebase (veja acima).
 
-## 5. Criar as duas contas
-
-Abra o endereço → **"Primeiro acesso? Criar conta"** → preencha nome, usuário, senha (mín. 8 caracteres) e o código de convite. Faça uma conta para a Edla e outra para o Luiz.
-
-**Depois que as duas existirem, desative o cadastro** (boa prática de segurança):
+## Testar no computador
 
 ```bash
-npx wrangler secret delete INVITE_CODE
+npm run migrate:local
+# crie o arquivo .dev.vars (não vai para o Git) com:
+#   FIREBASE_PROJECT_ID=edila-financas
+#   ALLOWED_EMAILS=email1@gmail.com,email2@gmail.com
+npm run dev          # http://localhost:8787
+npm test
 ```
 
-## 6. Instalar no celular da Edla
+## Segurança
 
-**Opção A: direto pelo Chrome (recomendada, 30 segundos).**
-Abrir o endereço no Chrome do Android → menu ⋮ → **Instalar app**. Vira um ícone na tela inicial, abre em tela cheia, igual a um aplicativo.
-
-**Opção B: gerar o APK.**
-1. Acesse <https://www.pwabuilder.com>, cole o endereço do app e escolha **Android → Download**.
-2. Guarde o arquivo de assinatura (`.keystore`) e a senha: sem eles não dá para atualizar o app depois.
-3. Envie o `.apk` para o celular dela e instale (permitir "fontes desconhecidas").
-4. Para sumir a barra de endereço dentro do APK, o PWABuilder fornece um `assetlinks.json`; coloque em `public/.well-known/assetlinks.json` e rode `npx wrangler deploy` de novo.
-
-**Luiz:** abre o endereço no navegador e usa "Adicionar à tela inicial" / fixar, como já faz com outros apps.
-
-## Manutenção
-
-| Situação | Comando |
-|---|---|
-| Atualizar o app | `npx wrangler deploy` |
-| Backup dos dados | `npx wrangler d1 export edla-financas --remote --output backup.sql` |
-| Esqueceu a senha | `npx wrangler secret put INVITE_CODE`, depois `npx wrangler d1 execute edla-financas --remote --command "DELETE FROM users WHERE username='edla'"` e crie a conta de novo (os lançamentos ficam, só perdem o "por quem"). Depois apague o convite de novo. |
-| Ver erros | `npx wrangler tail` |
-
-## Cuidados
-
-- **Este repositório é público.** Nunca coloque no código: senhas, o código de convite, o arquivo `.dev.vars`, backups `.sql` ou fotos. O `.gitignore` já protege `.dev.vars`; os segredos reais ficam apenas no Cloudflare.
-- Os dados financeiros ficam só no banco D1 da sua conta Cloudflare, protegidos por login.
-- Considere mover esta pasta para um **repositório privado** próprio.
+- Login só pelo Google; o servidor confere a assinatura do token do Firebase, o projeto e o e-mail na lista autorizada.
+- Cada lançamento pode ser privado (só o dono vê). Quem não é o dono nunca altera a privacidade.
+- Sessões duram 30 dias e ficam em cookie `HttpOnly`.

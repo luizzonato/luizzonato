@@ -3,40 +3,39 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Edla Finanças</title>
+  <title>Couple Bank</title>
   <meta name="description" content="Controle financeiro do casal: gastos, parcelas e quanto da renda já está comprometido.">
-  <meta name="theme-color" content="#7b4bd6">
+  <meta name="theme-color" content="#7a5fb8">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <!-- Entrar / primeiro acesso -->
-  <main id="auth" class="auth" hidden>
-    <div class="auth-card">
-      <img class="auth-logo" src="/icons/icon.svg" alt="" width="72" height="72">
-      <h1>Edla Finanças</h1>
-      <p id="auth-sub" class="muted">Entre para ver suas finanças.</p>
-      <form id="auth-form" autocomplete="on" novalidate>
-        <label class="field" id="f-name" hidden>Nome
-          <input name="name" maxlength="40" autocomplete="name">
-        </label>
-        <label class="field">Usuário
-          <input name="username" maxlength="30" autocomplete="username" autocapitalize="none" required>
-        </label>
-        <label class="field">Senha
-          <input name="password" type="password" maxlength="200" autocomplete="current-password" required>
-        </label>
-        <label class="field" id="f-invite" hidden>Código de convite
-          <input name="invite" type="password" maxlength="200" autocomplete="off">
-        </label>
-        <p id="auth-error" class="error" role="alert"></p>
-        <button class="btn primary" type="submit" id="auth-submit">Entrar</button>
-      </form>
-      <button class="link" id="auth-toggle" type="button"></button>
-    </div>
-  </main>
+  <div class="screen-rim glow" aria-hidden="true"></div>
+  <!-- Abertura: um toque para entrar -->
+  <button id="splash" class="splash" type="button" aria-label="Couple Bank: entrar com Google">
+    <img class="bg-blur p" src="/img/capa-app.jpg" alt="" aria-hidden="true">
+    <img class="bg-blur w" src="/img/capa-desktop.jpg" alt="" aria-hidden="true">
+    <!-- Celular (tela em pé): arte vertical, que já traz o botão desenhado; o brilho é posto exatamente em cima dele -->
+    <span class="frame-p" aria-hidden="true">
+      <img src="/img/capa-app.jpg" alt="" width="1080" height="1920" fetchpriority="high">
+      <span class="baked-ring glow"></span>
+    </span>
+    <!-- Desktop (tela larga): arte horizontal -->
+    <img class="art-wide" src="/img/capa-desktop.jpg" alt="Couple Bank" width="1920" height="1441">
+    <span class="strip-w" role="img" aria-label="Couple Bank">
+      <img src="/img/capa-desktop.jpg" alt="" width="1920" height="1441">
+    </span>
+    <span class="rim" aria-hidden="true"></span>
+    <span class="splash-who">
+      <span id="splash-error" class="error" role="alert"></span>
+      <span class="g-btn glow" id="g-btn">
+        <svg viewBox="0 0 48 48" width="22" height="22" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.6 5.9c4.4-4.1 7-10.1 7-17.6z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.4-.8-3-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C.9 16.4 0 20.1 0 24s.9 7.6 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.6-5.9c-2.1 1.4-4.9 2.3-8.3 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
+        Entrar com Google
+      </span>
+    </span>
+  </button>
 
   <!-- App -->
   <div id="app" hidden>
@@ -56,15 +55,24 @@
     <main class="views">
       <section id="view-resumo" class="view"></section>
       <section id="view-lancamentos" class="view" hidden></section>
+      <section id="view-analises" class="view" hidden></section>
       <section id="view-perfil" class="view" hidden></section>
+      <section id="view-sobre" class="view" hidden></section>
     </main>
 
     <button id="fab" class="fab" type="button" aria-label="Novo lançamento">+</button>
 
-    <nav class="tabs" aria-label="Seções">
-      <button type="button" data-view="resumo" class="active"><span class="ico">📊</span>Resumo</button>
-      <button type="button" data-view="lancamentos"><span class="ico">📋</span>Lançamentos</button>
-      <button type="button" data-view="perfil"><span class="ico">👤</span>Perfil</button>
+    <nav class="tabs" id="side" aria-label="Seções">
+      <button type="button" id="side-toggle" class="brand" aria-label="Ir para o Resumo" title="Ir para o Resumo">
+        <img id="brand-name" class="brand-name" alt="" width="450" height="253">
+        <img id="brand-letter" class="brand-letter" alt="" width="128" height="128">
+      </button>
+      <button type="button" data-view="resumo" class="active" title="Resumo"><span class="ico">📊</span><span class="lbl">Resumo</span></button>
+      <button type="button" data-view="lancamentos" title="Lançamentos"><span class="ico">📋</span><span class="lbl">Lançamentos</span></button>
+      <button type="button" data-view="analises" title="Análises"><span class="ico">📈</span><span class="lbl">Análises</span></button>
+      <button type="button" data-view="perfil" title="Perfil"><span class="ico">👤</span><span class="lbl">Perfil</span></button>
+      <button type="button" data-view="sobre" title="Sobre"><span class="ico">ℹ️</span><span class="lbl">Sobre</span></button>
+          <button type="button" id="side-collapse" class="collapse" aria-label="Recolher ou expandir o menu" title="Recolher / expandir"><span class="chev" aria-hidden="true">‹</span><span class="lbl">Recolher menu</span></button>
     </nav>
   </div>
 
@@ -92,6 +100,7 @@
           <input name="months" inputmode="numeric" maxlength="3" autocomplete="off">
         </label>
       </div>
+      <label id="f-istotal" class="check" hidden><input type="checkbox" name="is_total"> <span>O valor acima é o <b>total da compra</b> (o app divide pelas parcelas)</span></label>
       <p id="total-hint" class="hint" hidden></p>
 
       <div class="row">
@@ -112,6 +121,17 @@
       <label class="field">Observação (opcional)
         <input name="note" maxlength="200" autocomplete="off">
       </label>
+
+      <div id="f-split" class="split-box">
+        <label class="check"><input type="checkbox" name="split_on"> <span id="split-title">Conta dividida</span></label>
+        <div id="split-detail" hidden>
+          <label class="field"><span id="split-label">Minha parte (%)</span>
+            <input name="split_pct" inputmode="numeric" maxlength="2" value="50" autocomplete="off">
+          </label>
+          <p id="split-hint" class="hint"></p>
+        </div>
+      </div>
+      <label id="f-private" class="check private" hidden><input type="checkbox" name="is_private"> <span>🔒 Privado: só eu vejo</span></label>
 
       <p id="entry-error" class="error" role="alert"></p>
       <div class="sheet-actions">

@@ -7,7 +7,7 @@
     "directory": "./public",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": ["/api/*", "/.well-known/assetlinks.json"]
   },
   "d1_databases": [
     {
@@ -19,6 +19,7 @@
     }
   ],
   "vars": {
-    "MAX_USERS": "2"
+    "MAX_USERS": "2",
+    "FIREBASE_PROJECT_ID": "edila-financas"
   }
 }
