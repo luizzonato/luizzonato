@@ -1,0 +1,163 @@
+name: Edla Finanças - publicar e gerar APK
+
+# Roda só quando alguém com acesso ao repositório clica em "Run workflow".
+on:
+  workflow_dispatch:
+    inputs:
+      close_signup:
+        description: "Fechar o cadastro (apaga o código de convite) - marque depois que as 2 contas existirem"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: edla-apk
+  cancel-in-progress: false
+
+env:
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+  CI: "true"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: edla-financas
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: edla-financas/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.7
+
+      - name: Conferir segredos do Cloudflare
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::Faltam os segredos CLOUDFLARE_API_TOKEN e/ou CLOUDFLARE_ACCOUNT_ID (Settings > Secrets and variables > Actions)."
+            exit 1
+          fi
+
+      - run: npm ci
+
+      - name: Testes
+        run: npm test
+
+      - name: Criar o banco (se ainda não existir) e aplicar as tabelas
+        run: |
+          npx wrangler d1 create edla-financas >/dev/null 2>&1 || echo "Banco já existe, seguindo."
+          DB_ID=$(npx wrangler d1 info edla-financas --json | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const j=JSON.parse(s);console.log(j.uuid||j.id)})")
+          if ! echo "$DB_ID" | grep -Eq '^[0-9a-f-]{36}$'; then echo "::error::Não consegui obter o ID do banco."; exit 1; fi
+          sed -i "s/00000000-0000-0000-0000-000000000000/$DB_ID/" wrangler.jsonc
+          npx wrangler d1 migrations apply edla-financas --remote
+
+      - name: Publicar o app (1ª vez, para descobrir o endereço)
+        id: deploy1
+        run: |
+          npx wrangler deploy 2>&1 | tee /tmp/deploy1.log
+          URL=$(sed 's/\x1b\[[0-9;]*m//g' /tmp/deploy1.log | grep -oE 'https://[A-Za-z0-9.-]+\.workers\.dev' | head -1)
+          if [ -z "$URL" ]; then echo "::error::Não achei o endereço publicado. Ative o subdomínio workers.dev no painel do Cloudflare (Workers & Pages)."; exit 1; fi
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Código de convite
+        env:
+          INVITE_CODE: ${{ secrets.INVITE_CODE }}
+          CLOSE_SIGNUP: ${{ inputs.close_signup }}
+        run: |
+          if [ "$CLOSE_SIGNUP" = "true" ]; then
+            if npx wrangler secret delete INVITE_CODE > /tmp/del.log 2>&1; then
+              echo "Cadastro fechado."
+            elif grep -qiE "not found|10053|does not exist" /tmp/del.log; then
+              echo "Cadastro já estava fechado."
+            else
+              cat /tmp/del.log
+              echo "::error::Não consegui fechar o cadastro."
+              exit 1
+            fi
+          elif [ -n "$INVITE_CODE" ]; then
+            printf '%s' "$INVITE_CODE" | npx wrangler secret put INVITE_CODE
+          else
+            echo "Segredo INVITE_CODE do GitHub não definido: mantendo o que já está no Cloudflare."
+          fi
+
+      - name: Gerar chave de assinatura do APK
+        id: key
+        run: |
+          PASS=$(openssl rand -hex 16)
+          echo "::add-mask::$PASS"
+          keytool -genkeypair -noprompt -alias edla -keyalg RSA -keysize 2048 -validity 10000 \
+            -keystore "$RUNNER_TEMP/edla.jks" -storepass "$PASS" -keypass "$PASS" \
+            -dname "CN=Edla Financas, O=Familia, C=BR"
+          SHA=$(keytool -list -v -keystore "$RUNNER_TEMP/edla.jks" -storepass "$PASS" -alias edla | grep -oE 'SHA256: ([0-9A-F]{2}:){31}[0-9A-F]{2}' | cut -d' ' -f2)
+          if ! echo "$SHA" | grep -Eq '^([0-9A-F]{2}:){31}[0-9A-F]{2}$'; then echo "::error::Fingerprint inválido."; exit 1; fi
+          echo "KEYSTORE_PASSWORD=$PASS" >> "$GITHUB_ENV"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Montar o APK
+        env:
+          SITE_URL: ${{ steps.deploy1.outputs.url }}
+          KEYSTORE_FILE: ${{ runner.temp }}/edla.jks
+          VERSION_CODE: ${{ github.run_number }}
+        working-directory: edla-financas/android
+        run: |
+          cat > app/src/main/res/values/asset_statements.xml <<XML
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <string name="asset_statements">[{\"relation\": [\"delegate_permission/common.handle_all_urls\"], \"target\": {\"namespace\": \"web\", \"site\": \"$SITE_URL\"}}]</string>
+          </resources>
+          XML
+          gradle --no-daemon assembleRelease
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/out/edla-financas.apk"
+
+      - name: Publicar de novo com a verificação do app (tela cheia, sem barra de endereço)
+        env:
+          SHA: ${{ steps.key.outputs.sha }}
+        run: |
+          sed -i "s/\"MAX_USERS\": \"2\"/\"MAX_USERS\": \"2\", \"ANDROID_PACKAGE\": \"br.com.zonato.edla\", \"ANDROID_SHA256\": \"$SHA\"/" wrangler.jsonc
+          grep -q ANDROID_SHA256 wrangler.jsonc
+          npx wrangler deploy
+
+      - name: Conferir que o servidor responde a verificação
+        env:
+          URL: ${{ steps.deploy1.outputs.url }}
+        run: |
+          sleep 5
+          curl -fsS "$URL/.well-known/assetlinks.json"
+          echo
+          curl -fsS -o /dev/null -w "app: %{http_code}\n" "$URL/"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: edla-financas-apk
+          path: out/edla-financas.apk
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Resumo
+        env:
+          URL: ${{ steps.deploy1.outputs.url }}
+        run: |
+          {
+            echo "## Pronto"
+            echo "- App publicado em: $URL"
+            echo "- APK: baixe em **Artifacts** no fim desta página (edla-financas-apk)."
+            echo "- A cada nova execução o APK muda de chave: desinstale o anterior antes de instalar o novo (os dados ficam salvos na nuvem)."
+          } >> "$GITHUB_STEP_SUMMARY"

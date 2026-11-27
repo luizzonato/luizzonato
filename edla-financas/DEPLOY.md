@@ -1,4 +1,37 @@
-# Como publicar no Cloudflare (passo a passo)
+# Caminho mais fácil: publicar e gerar o APK pelo GitHub (sem instalar nada)
+
+Um fluxo automático (`.github/workflows/edla-apk.yml`) cria o banco, publica no Cloudflare e gera o APK nos servidores do GitHub.
+
+## Preparação (uma vez)
+
+1. **Cloudflare, token:** em <https://dash.cloudflare.com/profile/api-tokens> → *Create Token* → modelo **Edit Cloudflare Workers** e, em *Permissions*, adicione **Account → D1 → Edit**. Copie o token.
+2. **Cloudflare, ID da conta:** no painel, página *Workers & Pages*; o *Account ID* aparece na barra lateral. Se for o primeiro acesso, o painel pede para escolher um subdomínio `workers.dev`: aceite.
+3. **GitHub:** no repositório → *Settings → Secrets and variables → Actions → New repository secret*. Crie três:
+   - `CLOUDFLARE_API_TOKEN`: o token do passo 1
+   - `CLOUDFLARE_ACCOUNT_ID`: o ID do passo 2
+   - `INVITE_CODE`: uma frase longa inventada por você (será pedida ao criar as contas)
+
+## Gerar
+
+> O GitHub só mostra o botão *Run workflow* quando o arquivo `.github/workflows/edla-apk.yml` está na branch **main**. Faça o merge desta branch na main primeiro.
+
+*Actions → "Edla Finanças - publicar e gerar APK" → Run workflow*. Leva uns 5 a 10 minutos.
+No fim, abra a execução: o endereço do app aparece no **Resumo** e o APK em **Artifacts → edla-financas-apk** (baixe o .zip e extraia).
+
+## Depois
+
+1. Instale o APK no celular da Edla (permitir "fontes desconhecidas"), abra, e crie as duas contas com o código de convite.
+2. **Feche o cadastro:** rode o fluxo de novo marcando **close_signup** (e apague o segredo `INVITE_CODE` do GitHub).
+
+Observações:
+- Cada execução gera um APK com chave nova: **desinstale o antigo antes de instalar o novo**. Os dados ficam na nuvem, nada se perde.
+- Para atualizar o app, sempre rode este fluxo (um `wrangler deploy` manual remove a verificação de tela cheia, e a barra de endereço aparece no APK).
+- O APK não tem nenhum dado seu; só abre o endereço do app. Mesmo assim, este repositório é público, então qualquer pessoa logada no GitHub conseguiria baixá-lo. Sem login no app, ela não vê nada.
+
+---
+
+# Caminho manual (pelo terminal)
+
 
 Precisa de: uma conta gratuita no Cloudflare e Node.js 20+ no computador.
 Tudo abaixo é feito **uma vez**, dentro da pasta `edla-financas`.

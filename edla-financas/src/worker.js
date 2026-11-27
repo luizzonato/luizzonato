@@ -211,6 +211,19 @@ async function handleApi(request, env, url) {
   const { pathname } = url;
   const method = request.method;
 
+  // Verificação do app Android (TWA): faz o APK abrir em tela cheia, sem barra de endereço.
+  if (pathname === '/.well-known/assetlinks.json' && (method === 'GET' || method === 'HEAD')) {
+    const pkg = env.ANDROID_PACKAGE;
+    const sha = env.ANDROID_SHA256;
+    if (!/^[a-zA-Z][\w.]{2,100}$/.test(pkg || '') || !/^([0-9A-F]{2}:){31}[0-9A-F]{2}$/.test(sha || '')) {
+      throw new HttpError(404, 'Não encontrado.');
+    }
+    return json([{
+      relation: ['delegate_permission/common.handle_all_urls'],
+      target: { namespace: 'android_app', package_name: pkg, sha256_cert_fingerprints: [sha] },
+    }], 200, { 'Cache-Control': 'public, max-age=300' });
+  }
+
   // Proteção CSRF: pedidos que alteram dados precisam vir do mesmo site.
   if (method !== 'GET' && method !== 'HEAD') {
     const origin = request.headers.get('Origin');

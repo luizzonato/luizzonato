@@ -1,0 +1,5 @@
+build/
+.gradle/
+*.jks
+*.keystore
+app/src/main/res/values/asset_statements.xml

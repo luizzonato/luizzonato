@@ -1,0 +1,42 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Tudo vem do fluxo do GitHub Actions (variáveis de ambiente); nenhum segredo fica no código.
+def siteUrl = System.getenv('SITE_URL') ?: 'https://example.invalid'
+def siteHost = new URI(siteUrl).host
+def versionNumber = (System.getenv('VERSION_CODE') ?: '1') as int
+
+android {
+    namespace 'br.com.zonato.edla'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'br.com.zonato.edla'
+        minSdk 23
+        targetSdk 34
+        versionCode versionNumber
+        versionName "1.0.${versionNumber}"
+        manifestPlaceholders = [siteUrl: siteUrl, siteHost: siteHost]
+    }
+
+    signingConfigs {
+        release {
+            storeFile file(System.getenv('KEYSTORE_FILE') ?: 'missing.jks')
+            storePassword System.getenv('KEYSTORE_PASSWORD')
+            keyAlias 'edla'
+            keyPassword System.getenv('KEYSTORE_PASSWORD')
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+        }
+    }
+}
+
+dependencies {
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+}
