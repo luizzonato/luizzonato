@@ -1,13 +1,8 @@
-name: Edla Finanças - publicar e gerar APK
+name: Couple Bank - publicar e gerar APK
 
 # Roda só quando alguém com acesso ao repositório clica em "Run workflow".
 on:
   workflow_dispatch:
-    inputs:
-      close_signup:
-        description: "Fechar o cadastro (apaga o código de convite) - marque depois que as 2 contas existirem"
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -76,26 +71,15 @@ jobs:
           if [ -z "$URL" ]; then echo "::error::Não achei o endereço publicado. Ative o subdomínio workers.dev no painel do Cloudflare (Workers & Pages)."; exit 1; fi
           echo "url=$URL" >> "$GITHUB_OUTPUT"
 
-      - name: Código de convite
+      - name: E-mails autorizados (login com Google)
         env:
-          INVITE_CODE: ${{ secrets.INVITE_CODE }}
-          CLOSE_SIGNUP: ${{ inputs.close_signup }}
+          ALLOWED_EMAILS: ${{ secrets.ALLOWED_EMAILS }}
         run: |
-          if [ "$CLOSE_SIGNUP" = "true" ]; then
-            if npx wrangler secret delete INVITE_CODE > /tmp/del.log 2>&1; then
-              echo "Cadastro fechado."
-            elif grep -qiE "not found|10053|does not exist" /tmp/del.log; then
-              echo "Cadastro já estava fechado."
-            else
-              cat /tmp/del.log
-              echo "::error::Não consegui fechar o cadastro."
-              exit 1
-            fi
-          elif [ -n "$INVITE_CODE" ]; then
-            printf '%s' "$INVITE_CODE" | npx wrangler secret put INVITE_CODE
-          else
-            echo "Segredo INVITE_CODE do GitHub não definido: mantendo o que já está no Cloudflare."
+          if [ -z "$ALLOWED_EMAILS" ]; then
+            echo "::error::Falta o segredo ALLOWED_EMAILS (os e-mails Google autorizados, separados por vírgula). Settings > Secrets and variables > Actions."
+            exit 1
           fi
+          printf '%s' "$ALLOWED_EMAILS" | npx wrangler secret put ALLOWED_EMAILS
 
       - name: Gerar chave de assinatura do APK
         id: key
@@ -160,4 +144,6 @@ jobs:
             echo "- App publicado em: $URL"
             echo "- APK: baixe em **Artifacts** no fim desta página (edla-financas-apk)."
             echo "- A cada nova execução o APK muda de chave: desinstale o anterior antes de instalar o novo (os dados ficam salvos na nuvem)."
+            echo "- **iPhone:** abra $URL no Safari > Compartilhar > Adicionar à Tela de Início."
+            echo "- **Firebase (uma vez):** em Authentication > Settings > Authorized domains, adicione ${URL#https://} (sem isso o login do Google é recusado)."
           } >> "$GITHUB_STEP_SUMMARY"

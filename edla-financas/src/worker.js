@@ -16,6 +16,7 @@ const LOGIN_WINDOW_S = 15 * 60;
 const LOGIN_MAX_FAILS = 8;
 
 const enc = new TextEncoder();
+const dec = new TextDecoder();
 
 // ---------- utilidades ----------
 
@@ -156,7 +157,11 @@ function validateEntry(body) {
   } else if (months !== null && (!Number.isInteger(months) || months < 1 || months > 600)) {
     throw new HttpError(400, 'Duração inválida.');
   }
-  return { kind, description, amount_cents: amount, method, category, start_month, months, note };
+  let split_pct = body.split_pct ?? null;
+  if (split_pct !== null && (!Number.isInteger(split_pct) || split_pct < 1 || split_pct > 99)) throw new HttpError(400, 'Divisão inválida.');
+  const is_private = body.is_private === true || body.is_private === 1 ? 1 : 0;
+  if (kind === 'income' || is_private) split_pct = null; // renda e lançamento privado não se dividem
+  return { kind, description, amount_cents: amount, method, category, start_month, months, note, split_pct, is_private };
 }
 
 const AVATAR_MAGIC = {
@@ -203,7 +208,9 @@ async function createSession(env, userId) {
   return token;
 }
 
-const publicUser = (u) => ({ id: u.id, name: u.name, username: u.username, avatar: u.avatar });
+// O "dono" é o primeiro e-mail da lista ALLOWED_EMAILS: só ele pode marcar lançamentos como privados.
+const isOwner = (env, u) => String(env.ALLOWED_EMAILS || '').split(',')[0].trim().toLowerCase() === String(u.username).toLowerCase();
+const publicUser = (u, env) => ({ id: u.id, name: u.name, username: u.username, avatar: u.avatar, owner: env ? isOwner(env, u) : false });
 
 // ---------- rotas ----------
 
@@ -234,13 +241,12 @@ async function handleApi(request, env, url) {
 
   if (pathname === '/api/me' && method === 'GET') {
     const user = await currentUser(request, env, url);
-    if (user) return json({ user: publicUser(user) });
+    if (user) return json({ user: publicUser(user, env) });
     const { n } = await env.DB.prepare('SELECT COUNT(*) AS n FROM users').first();
     return json({ user: null, firstAccess: n === 0 }, 401);
   }
 
-  if (pathname === '/api/register' && method === 'POST') return register(request, env, url);
-  if (pathname === '/api/login' && method === 'POST') return login(request, env, url);
+  if (pathname === '/api/google' && method === 'POST') return googleLogin(request, env, url);
 
   // Tudo abaixo exige login.
   const user = await currentUser(request, env, url);
@@ -288,23 +294,48 @@ async function handleApi(request, env, url) {
   }
 
   if (pathname === '/api/entries') {
+    const owner = isOwner(env, user);
     if (method === 'GET') {
       const { results } = await env.DB.prepare(
         `SELECT e.id, e.kind, e.description, e.amount_cents, e.method, e.category,
-                e.start_month, e.months, e.note, e.created_at, u.name AS created_by
+                e.start_month, e.months, e.note, e.created_at, e.is_private, e.split_pct,
+                e.created_by AS owner_id, u.name AS created_by
          FROM entries e LEFT JOIN users u ON u.id = e.created_by
+         WHERE (e.is_private = 0 OR ? = 1)
          ORDER BY e.start_month DESC, e.id DESC LIMIT 5000`,
-      ).all();
-      return json({ entries: results, categories: CATEGORIES });
+      ).bind(owner ? 1 : 0).all();
+      const partner = await env.DB.prepare('SELECT id, name FROM users WHERE id != ? ORDER BY id LIMIT 1').bind(user.id).first();
+      const pays = await env.DB.prepare(
+        `SELECT p.entry_id, p.month, p.user_id FROM payments p JOIN entries e ON e.id = p.entry_id
+         WHERE (e.is_private = 0 OR ? = 1)`,
+      ).bind(owner ? 1 : 0).all();
+      return json({ entries: results, categories: CATEGORIES, partner: partner || null, payments: pays.results });
     }
     if (method === 'POST') {
       const e = validateEntry(await readJson(request));
+      if (!owner) { e.is_private = 0; }
       const res = await env.DB.prepare(
-        `INSERT INTO entries (kind, description, amount_cents, method, category, start_month, months, note, created_by)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      ).bind(e.kind, e.description, e.amount_cents, e.method, e.category, e.start_month, e.months, e.note, user.id).run();
+        `INSERT INTO entries (kind, description, amount_cents, method, category, start_month, months, note, created_by, is_private, split_pct)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).bind(e.kind, e.description, e.amount_cents, e.method, e.category, e.start_month, e.months, e.note, user.id, e.is_private, e.split_pct).run();
       return json({ ok: true, id: res.meta.last_row_id }, 201);
     }
+  }
+
+  if (pathname === '/api/payments' && method === 'POST') {
+    const body = await readJson(request);
+    const entryId = body.entry_id;
+    if (!Number.isInteger(entryId) || entryId < 1) throw new HttpError(400, 'Lançamento inválido.');
+    const month = validateMonth(body.month);
+    const visible = await env.DB.prepare('SELECT id FROM entries WHERE id = ? AND (is_private = 0 OR ? = 1)')
+      .bind(entryId, isOwner(env, user) ? 1 : 0).first();
+    if (!visible) throw new HttpError(404, 'Lançamento não encontrado.');
+    if (body.paid === true) {
+      await env.DB.prepare('INSERT OR IGNORE INTO payments (entry_id, month, user_id) VALUES (?, ?, ?)').bind(entryId, month, user.id).run();
+    } else {
+      await env.DB.prepare('DELETE FROM payments WHERE entry_id = ? AND month = ? AND user_id = ?').bind(entryId, month, user.id).run();
+    }
+    return json({ ok: true });
   }
 
   const m = /^\/api\/entries\/(\d{1,12})$/.exec(pathname);
@@ -312,15 +343,18 @@ async function handleApi(request, env, url) {
     const id = Number(m[1]);
     if (method === 'PUT') {
       const e = validateEntry(await readJson(request));
+      const owner = isOwner(env, user) ? 1 : 0;
+      // Quem não é o dono nunca altera a privacidade nem mexe em lançamento privado.
       const res = await env.DB.prepare(
-        `UPDATE entries SET kind=?, description=?, amount_cents=?, method=?, category=?, start_month=?, months=?, note=?
-         WHERE id = ?`,
-      ).bind(e.kind, e.description, e.amount_cents, e.method, e.category, e.start_month, e.months, e.note, id).run();
+        `UPDATE entries SET kind=?, description=?, amount_cents=?, method=?, category=?, start_month=?, months=?, note=?,
+                split_pct=?, is_private = CASE WHEN ? = 1 THEN ? ELSE is_private END
+         WHERE id = ? AND (is_private = 0 OR ? = 1)`,
+      ).bind(e.kind, e.description, e.amount_cents, e.method, e.category, e.start_month, e.months, e.note, e.split_pct, owner, e.is_private, id, owner).run();
       if (!res.meta.changes) throw new HttpError(404, 'Lançamento não encontrado.');
       return json({ ok: true });
     }
     if (method === 'DELETE') {
-      const res = await env.DB.prepare('DELETE FROM entries WHERE id = ?').bind(id).run();
+      const res = await env.DB.prepare('DELETE FROM entries WHERE id = ? AND (is_private = 0 OR ? = 1)').bind(id, isOwner(env, user) ? 1 : 0).run();
       if (!res.meta.changes) throw new HttpError(404, 'Lançamento não encontrado.');
       return json({ ok: true });
     }
@@ -370,6 +404,68 @@ async function register(request, env, url) {
   const token = await createSession(env, res.meta.last_row_id);
   const user = await env.DB.prepare('SELECT id, name, username, avatar FROM users WHERE id = ?').bind(res.meta.last_row_id).first();
   return json({ user: publicUser(user) }, 201, { 'Set-Cookie': sessionCookie(url, token, SESSION_TTL_S) });
+}
+
+// ---------- login com Google (Firebase Auth) ----------
+// O navegador entrega um ID token do Firebase; aqui conferimos a assinatura, o projeto e se o e-mail está na lista.
+const JWKS_URL = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com';
+
+function b64urlToBytes(v) {
+  const s = v.replace(/-/g, '+').replace(/_/g, '/');
+  const bin = atob(s + '='.repeat((4 - (s.length % 4)) % 4));
+  return Uint8Array.from(bin, (c) => c.charCodeAt(0));
+}
+
+export async function verifyFirebaseToken(token, projectId, now = Math.floor(Date.now() / 1000), jwks) {
+  const bad = () => new HttpError(401, 'Login com Google inválido.');
+  if (typeof token !== 'string' || token.length > 4000 || !projectId) throw bad();
+  const parts = token.split('.');
+  if (parts.length !== 3) throw bad();
+  let header; let claims;
+  try {
+    header = JSON.parse(dec.decode(b64urlToBytes(parts[0])));
+    claims = JSON.parse(dec.decode(b64urlToBytes(parts[1])));
+  } catch { throw bad(); }
+  if (header.alg !== 'RS256' || !header.kid) throw bad();
+  const keys = jwks || (await (await fetch(JWKS_URL, { cf: { cacheTtl: 3600, cacheEverything: true } })).json()).keys;
+  const jwk = (keys || []).find((k) => k.kid === header.kid);
+  if (!jwk) throw bad();
+  const key = await crypto.subtle.importKey('jwk', jwk, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['verify']);
+  const okSig = await crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, b64urlToBytes(parts[2]), enc.encode(`${parts[0]}.${parts[1]}`));
+  if (!okSig) throw bad();
+  if (claims.aud !== projectId || claims.iss !== `https://securetoken.google.com/${projectId}`) throw bad();
+  if (!claims.sub || !(claims.exp > now) || !(claims.iat <= now + 60)) throw bad();
+  if (claims.email_verified !== true || claims.firebase?.sign_in_provider !== 'google.com') throw bad();
+  return claims;
+}
+
+async function googleLogin(request, env, url) {
+  const ip = clientIp(request);
+  await assertNotLocked(env, [`ip:${ip}`]);
+  const body = await readJson(request);
+  let claims;
+  try {
+    claims = await verifyFirebaseToken(body.idToken, env.FIREBASE_PROJECT_ID);
+  } catch (err) {
+    await recordFail(env, [`ip:${ip}`]);
+    throw err;
+  }
+  const email = String(claims.email || '').toLowerCase();
+  const allowed = String(env.ALLOWED_EMAILS || '').toLowerCase().split(',').map((e) => e.trim()).filter(Boolean);
+  if (!email || !allowed.includes(email)) {
+    await recordFail(env, [`ip:${ip}`]);
+    throw new HttpError(403, 'Esta conta Google não tem acesso ao app.');
+  }
+  let row = await env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(email).first();
+  if (!row) {
+    const first = String(claims.name || email.split('@')[0]).trim().split(/\s+/)[0].slice(0, 40) || 'Usuário';
+    const h = await hashPassword(b64url(crypto.getRandomValues(new Uint8Array(24)))); // senha aleatória: ninguém entra por senha
+    const res = await env.DB.prepare('INSERT INTO users (name, username, pass_hash, salt, iterations) VALUES (?, ?, ?, ?, ?)')
+      .bind(first, email, h.pass_hash, h.salt, h.iterations).run();
+    row = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(res.meta.last_row_id).first();
+  }
+  const token = await createSession(env, row.id);
+  return json({ user: publicUser(row, env) }, 200, { 'Set-Cookie': sessionCookie(url, token, SESSION_TTL_S) });
 }
 
 // Hash falso para gastar o mesmo tempo quando o usuário não existe.

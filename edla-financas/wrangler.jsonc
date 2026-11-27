@@ -19,6 +19,7 @@
     }
   ],
   "vars": {
-    "MAX_USERS": "2"
+    "MAX_USERS": "2",
+    "FIREBASE_PROJECT_ID": "edila-financas"
   }
 }
