@@ -606,3 +606,5 @@ button { cursor: pointer; }
   }
   .frame-p img { position: static; display: block; width: 100%; height: 100%; transform: none; }
 }
+
+.splash .error:empty { display: none; }

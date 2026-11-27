@@ -1,5 +1,5 @@
 // Service worker mínimo: abre o app mesmo sem rede (a "casca"). Dados financeiros nunca ficam em cache.
-const CACHE = 'edla-v27';
+const CACHE = 'edla-v28';
 const SHELL = ['/', '/styles.css', '/app.js', '/calc.js', '/google.js', '/firebase-config.js', '/icons/icon.svg'];
 
 self.addEventListener('install', (e) => {
