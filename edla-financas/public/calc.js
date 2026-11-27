@@ -283,3 +283,14 @@ export function fixedWeight(entries, month, scope) {
   }
   return { fixed, variable, income, fixedPct: income > 0 ? (fixed / income) * 100 : null };
 }
+
+// Texto do estado do outro: "online", "visto há 12 min", "visto há 3 h", "visto em 20/11" ou "offline".
+export function lastSeenText(lastSeenSec, online, nowSec = Date.now() / 1000) {
+  if (online) return 'online';
+  if (!lastSeenSec) return 'offline';
+  const d = Math.max(0, nowSec - lastSeenSec);
+  if (d < 3600) return `visto há ${Math.max(1, Math.round(d / 60))} min`;
+  if (d < 86400) return `visto há ${Math.round(d / 3600)} h`;
+  const dt = new Date(lastSeenSec * 1000);
+  return `visto em ${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}`;
+}

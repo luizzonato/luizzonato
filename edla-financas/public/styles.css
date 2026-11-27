@@ -623,3 +623,11 @@ body[data-view='perfil'] .month-nav, body[data-view='sobre'] .month-nav { displa
   #view-perfil { grid-template-columns: 1fr; }
   #view-perfil > .profile-head, #view-perfil > .card:not(.profile-head), #view-perfil > .btn.danger { grid-column: 1; grid-row: auto; }
 }
+
+/* ---------- Presença: bolinha verde (online) / vermelha (offline) ---------- */
+.who { display: flex; align-items: center; gap: 14px; min-width: 0; flex-wrap: wrap; }
+.presence { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 99px; background: var(--card); box-shadow: var(--shadow); font-size: 0.78rem; font-weight: 700; white-space: nowrap; }
+.presence .pdot { width: 10px; height: 10px; border-radius: 50%; background: #ff5a6e; box-shadow: 0 0 8px #ff5a6e; flex: none; }
+.presence.on .pdot { background: #3ee0a0; box-shadow: 0 0 10px #3ee0a0; animation: ppulse 2s ease-in-out infinite; }
+@keyframes ppulse { 50% { box-shadow: 0 0 2px #3ee0a0; } }
+@media (prefers-reduced-motion: reduce) { .presence.on .pdot { animation: none; } }

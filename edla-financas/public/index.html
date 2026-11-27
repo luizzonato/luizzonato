@@ -41,9 +41,12 @@
   <div id="app" hidden>
     <header class="top">
       <button class="avatar-btn" id="top-avatar" type="button" aria-label="Meu perfil"></button>
-      <div class="hello">
-        <small class="muted">Olá,</small>
-        <strong id="hello-name"></strong>
+      <div class="who">
+        <div class="hello">
+          <small class="muted">Olá,</small>
+          <strong id="hello-name"></strong>
+        </div>
+        <span id="presence" class="presence" hidden role="status"><i class="pdot" aria-hidden="true"></i><span id="presence-name"></span></span>
       </div>
       <div class="month-nav" role="group" aria-label="Mês">
         <button type="button" id="m-prev" aria-label="Mês anterior">‹</button>

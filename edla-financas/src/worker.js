@@ -9,6 +9,7 @@ const CATEGORIES = [
 const KINDS = ['expense', 'installment', 'fixed', 'income'];
 
 const PBKDF2_ITERATIONS = 100000; // máximo permitido pelo runtime do Workers
+const ONLINE_WINDOW_S = 75; // sem sinal há mais que isso = offline
 const SESSION_TTL_S = 60 * 60 * 24 * 30; // 30 dias
 const MAX_BODY_BYTES = 300 * 1024;
 const MAX_AVATAR_CHARS = 200 * 1024;
@@ -192,7 +193,7 @@ async function currentUser(request, env, url) {
   if (!token || token.length > 100) return null;
   const hash = await sha256Hex(token);
   const row = await env.DB.prepare(
-    `SELECT u.id, u.name, u.username, u.avatar FROM sessions s
+    `SELECT u.id, u.name, u.username, u.avatar, u.show_online FROM sessions s
      JOIN users u ON u.id = s.user_id
      WHERE s.token_hash = ? AND s.expires_at > ?`,
   ).bind(hash, Math.floor(Date.now() / 1000)).first();
@@ -210,7 +211,7 @@ async function createSession(env, userId) {
 
 // O "dono" é o primeiro e-mail da lista ALLOWED_EMAILS: só ele pode marcar lançamentos como privados.
 const isOwner = (env, u) => String(env.ALLOWED_EMAILS || '').split(',')[0].trim().toLowerCase() === String(u.username).toLowerCase();
-const publicUser = (u, env) => ({ id: u.id, name: u.name, username: u.username, avatar: u.avatar, owner: env ? isOwner(env, u) : false });
+const publicUser = (u, env) => ({ id: u.id, name: u.name, username: u.username, avatar: u.avatar, show_online: u.show_online === undefined ? true : Boolean(u.show_online), owner: env ? isOwner(env, u) : false });
 
 // ---------- rotas ----------
 
@@ -251,6 +252,30 @@ async function handleApi(request, env, url) {
   // Tudo abaixo exige login.
   const user = await currentUser(request, env, url);
   if (!user) throw new HttpError(401, 'Faça login para continuar.');
+
+  // ---- presença: "estou aqui" a cada ~30 s e o estado do outro (só se os dois deixarem aparecer) ----
+  if (pathname === '/api/presence' && method === 'POST') {
+    const body = await readJson(request);
+    const now = Math.floor(Date.now() / 1000);
+    const me = await env.DB.prepare('SELECT show_online FROM users WHERE id = ?').bind(user.id).first();
+    if (me && me.show_online) {
+      // ao sair da tela o app avisa "leaving": marca como offline na hora
+      const ts = body.leaving === true ? now - 3600 : now;
+      await env.DB.prepare('UPDATE users SET last_seen = ? WHERE id = ?').bind(ts, user.id).run();
+    }
+    const other = await env.DB.prepare('SELECT name, last_seen, show_online FROM users WHERE id != ? ORDER BY id LIMIT 1').bind(user.id).first();
+    const visible = Boolean(me && me.show_online && other && other.show_online);
+    return json({
+      show_online: Boolean(me && me.show_online),
+      partner: visible ? { name: other.name, online: Boolean(other.last_seen && now - other.last_seen < ONLINE_WINDOW_S), last_seen: other.last_seen || null } : null,
+    });
+  }
+  if (pathname === '/api/presence/prefs' && method === 'POST') {
+    const body = await readJson(request);
+    const on = body.show_online === true ? 1 : 0;
+    await env.DB.prepare('UPDATE users SET show_online = ?, last_seen = CASE WHEN ? = 1 THEN last_seen ELSE NULL END WHERE id = ?').bind(on, on, user.id).run();
+    return json({ show_online: Boolean(on) });
+  }
 
   if (pathname === '/api/logout' && method === 'POST') {
     const token = parseCookies(request.headers.get('Cookie'))[cookieName(url)];

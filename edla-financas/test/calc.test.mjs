@@ -149,3 +149,13 @@ test('análises: alerta de meta, ritmo, linha do tempo, equilíbrio, divididas e
   assert.equal(paceOfMonth({ committed: 100, paid: 100, toPay: 0 }, '2026-12', hoje).status, 'done');
   assert.equal(paceOfMonth({ committed: 100, paid: 0, toPay: 100 }, '2026-11', hoje), null);
 });
+
+import { lastSeenText } from '../public/calc.js';
+test('presença: texto do último acesso', () => {
+  const agora = 1_800_000_000;
+  assert.equal(lastSeenText(agora - 5, true, agora), 'online');
+  assert.equal(lastSeenText(null, false, agora), 'offline');
+  assert.equal(lastSeenText(agora - 600, false, agora), 'visto há 10 min');
+  assert.equal(lastSeenText(agora - 7200, false, agora), 'visto há 2 h');
+  assert.match(lastSeenText(agora - 3 * 86400, false, agora), /^visto em \d\d\/\d\d$/);
+});

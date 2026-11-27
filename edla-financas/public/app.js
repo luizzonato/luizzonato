@@ -1,6 +1,6 @@
 import { googleConfigured, preloadGoogle, pendingRedirectToken, googleIdToken, googleSignOut } from '/google.js';
 import {
-  KIND_LABEL, addMonths, currentMonth, monthLabel, summarize, shareOf, levelOf, goalAlert, paceOfMonth, timeline, fairness, openSplits, fixedWeight, deltaPct, categoryCompare, endingCommitments, assess, simulate, dailyBudget, formatBRL, parseBRL,
+  KIND_LABEL, addMonths, currentMonth, monthLabel, summarize, lastSeenText, shareOf, levelOf, goalAlert, paceOfMonth, timeline, fairness, openSplits, fixedWeight, deltaPct, categoryCompare, endingCommitments, assess, simulate, dailyBudget, formatBRL, parseBRL,
 } from '/calc.js';
 
 // Segurança: todo texto vindo do usuário entra na tela via textContent (nunca innerHTML).
@@ -37,13 +37,15 @@ const state = {
   scope: 'me', // 'me' = só a minha parte | 'couple' = tudo que eu posso ver
   partner: null,
   payments: [],
+  presence: null,
 };
 
 // ---------- API ----------
 
-async function api(path, { method = 'GET', body } = {}) {
+async function api(path, { method = 'GET', body, keepalive = false } = {}) {
   const res = await fetch(path, {
     method,
+    keepalive,
     credentials: 'same-origin',
     headers: body !== undefined ? { 'Content-Type': 'application/json' } : {},
     body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -83,6 +85,48 @@ function showAuth() {
 
 // ---------- App ----------
 
+// ---------- Presença (bolinha verde/vermelha) ----------
+
+let presenceTimer = null;
+
+function renderPresence() {
+  const el = $('#presence');
+  const p = state.presence && state.presence.partner;
+  el.hidden = !p;
+  if (!p) return;
+  const info = lastSeenText(p.last_seen, p.online);
+  el.classList.toggle('on', p.online);
+  $('#presence-name').textContent = `${p.name.split(' ')[0]} · ${info}`;
+  el.title = p.online ? `${p.name} está online` : `${p.name}: ${info}`;
+}
+
+async function pingPresence(leaving = false) {
+  try {
+    state.presence = await api('/api/presence', { method: 'POST', body: leaving ? { leaving: true } : {}, keepalive: leaving });
+    renderPresence();
+  } catch { /* sem rede: mantém o último estado */ }
+}
+
+function stopPresence() {
+  clearInterval(presenceTimer);
+  presenceTimer = null;
+}
+
+// Enquanto o app está aberto e visível, avisa "estou aqui" a cada 30 s.
+function startPresence() {
+  stopPresence();
+  if (document.visibilityState !== 'visible') return;
+  pingPresence();
+  presenceTimer = setInterval(() => pingPresence(), 30000);
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (!state.user) return;
+  if (document.visibilityState === 'visible') startPresence();
+  else { stopPresence(); pingPresence(true); }
+});
+window.addEventListener('pagehide', () => { if (state.user) pingPresence(true); });
+
 async function startApp() {
     $('#app').hidden = false;
   const [{ entries, categories, partner, payments }, settings] = await Promise.all([api('/api/entries'), api('/api/settings')]);
@@ -93,6 +137,7 @@ async function startApp() {
   state.settings = settings;
   fillFormStatics();
   render();
+  startPresence();
 }
 
 async function reloadEntries() {
@@ -712,12 +757,28 @@ function renderPerfil() {
       slider,
       h('p', { class: 'hint', text: 'Dica: quem quer sobrar para guardar costuma usar entre 60% e 70%.' })),
     h('div', { class: 'card' },
+      h('h3', { text: 'Presença' }),
+      h('label', { class: 'check' },
+        h('input', { type: 'checkbox', checked: state.user.show_online !== false, onchange: async (ev) => {
+          const on = ev.target.checked;
+          try {
+            await api('/api/presence/prefs', { method: 'POST', body: { show_online: on } });
+            state.user.show_online = on;
+            await pingPresence();
+            toast(on ? 'Agora vocês se veem online' : 'Presença desligada');
+          } catch (e) { ev.target.checked = !on; toast(e.message); }
+        } }),
+        h('span', { text: 'Mostrar quando estou online (e ver quando o outro está)' })),
+      h('p', { class: 'hint', text: 'Bolinha verde: a outra pessoa está com o app aberto agora. Vermelha: não está. Se você desligar, nenhum dos dois vê o status do outro.' })),
+    h('div', { class: 'card' },
       h('h3', { text: 'Instalar no celular' }),
       h('ol', { class: 'steps' },
         h('li', { text: 'Android (Chrome): abra o endereço, toque em ⋮ e em “Instalar app”.' }),
         h('li', { text: 'iPhone (Safari): abra o endereço, toque em Compartilhar e em “Adicionar à Tela de Início”.' }),
         h('li', { text: 'Pronto: aparece um ícone como qualquer aplicativo.' }))),
     h('button', { class: 'btn danger', type: 'button', text: 'Sair', onclick: async () => {
+      stopPresence();
+      await pingPresence(true);
       try { await api('/api/logout', { method: 'POST' }); await googleSignOut(); } catch { /* já deslogada */ }
       state.user = null;
       showAuth(false);
