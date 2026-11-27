@@ -111,6 +111,7 @@ function avatarEl(user, big = false) {
 }
 
 function render() {
+  document.body.dataset.view = state.view;
   renderTop();
   const views = { resumo: renderResumo, lancamentos: renderLancamentos, analises: renderAnalises, perfil: renderPerfil, sobre: renderSobre };
   for (const name of Object.keys(views)) $(`#view-${name}`).hidden = name !== state.view;

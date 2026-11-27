@@ -608,3 +608,18 @@ button { cursor: pointer; }
 }
 
 .splash .error:empty { display: none; }
+
+/* ---------- Perfil e Sobre: sem seta de mês; no desktop, em grade e centralizados ---------- */
+body[data-view='perfil'] .month-nav, body[data-view='sobre'] .month-nav { display: none; }
+@media (min-width: 900px) {
+  body[data-view='perfil'] .top, body[data-view='sobre'] .top { grid-template-columns: auto 1fr; }
+  #view-perfil { max-width: 1000px; margin: 0 auto; width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
+  #view-perfil > .profile-head { grid-column: 1; grid-row: 1 / span 3; padding: 32px 18px; }
+  #view-perfil > .card:not(.profile-head) { grid-column: 2; }
+  #view-perfil > .btn.danger { grid-column: 1; justify-self: stretch; }
+  .avatar.big { width: 132px; height: 132px; }
+}
+@media (min-width: 900px) and (max-width: 1099px) {
+  #view-perfil { grid-template-columns: 1fr; }
+  #view-perfil > .profile-head, #view-perfil > .card:not(.profile-head), #view-perfil > .btn.danger { grid-column: 1; grid-row: auto; }
+}
